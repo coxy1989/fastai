@@ -57,6 +57,7 @@ class LRFinderPlus(LearnerCallback):
         self.valid_dl = learn.data.valid_dl
         self.data.valid_dl = None
         self.smoothener = SmoothenValue(0.98)
+        
 
     def on_train_begin(self, pbar, **kwargs:Any)->None:
         "Initialize optimizer and learner hyperparameters."
@@ -71,11 +72,8 @@ class LRFinderPlus(LearnerCallback):
         val_losses = validate(self.learn.model, self.valid_dl, self.learn.loss_func, CallbackHandler([], []), pbar=self.pbar)
         self.smoothener.add_value(val_losses)
         self.learn.recorder.val_losses.append(self.smoothener.smooth)
-        if iteration==0 or smooth_loss < self.best_trn_loss: self.best_trn_loss = smooth_loss
-        if iteration==0 or self.smoothener.smooth < self.best_val_loss: self.best_val_loss = self.smoothener.smooth
         self.opt.lr = self.sched.step()
-        if self.sched.is_done or (self.stop_div and (self.smoothener.smooth > 4*self.best_val_loss)):
-            #We use the smoothed loss to decide on the stopping since it's less shaky.
+        if self.sched.is_done:
             self.stop=True
             return True
 
